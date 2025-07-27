@@ -2,6 +2,7 @@ from colorama import Fore,init,Style
 from banner import *
 from lib.file_system import *
 from lib.crypt_system import *
+from time import sleep
 
 
 class PyPassManager():
@@ -69,8 +70,7 @@ class PyPassManager():
 
 
 			case "/show_all":
-				if len(self.MASTER_PASSWORD)==0:
-					self.MASTER_PASSWORD=str(input("$>MASTER_PASSWORD:"))*100
+				self.get_MASTER_PASSWORD()
 
 				data=self.file_system.show_all(self.MASTER_PASSWORD)
 				if not data:
@@ -79,11 +79,23 @@ class PyPassManager():
 
 
 				for data_pack in data:
-					if data_pack[0] != "NULL":
-						print(Fore.GREEN+"Name:"+self.crypt_system.decrypt_data(data_pack[0],self.MASTER_PASSWORD)+Style.RESET_ALL)
+					if data_pack[0] == "TEST_DATA":
+						continue
+						
+
+					print(Fore.GREEN+"Name:"+self.crypt_system.decrypt_data(data_pack[0],self.MASTER_PASSWORD)+Style.RESET_ALL)
 					print(Fore.GREEN+"URL:"+self.crypt_system.decrypt_data(data_pack[1],self.MASTER_PASSWORD)+Style.RESET_ALL)
 					print(Fore.GREEN+"Password:"+self.crypt_system.decrypt_data(data_pack[2],self.MASTER_PASSWORD)+Style.RESET_ALL)
 					print("\n"+"\n")
+
+			case "/get_password":
+			    if len(args)!=2:
+			    	print(Fore.RED+"Use /get_password <Name>"+Style.RESET_ALL)
+			    	return
+			    Name=args[1]
+			    self.get_MASTER_PASSWORD()
+			    self.get_password(Name)
+
 
 
 
@@ -98,13 +110,38 @@ class PyPassManager():
 			print(Fore.GREEN+"New password added!"+Style.RESET_ALL)
 
 
+
+
+	def get_password(self,Name):
+		crypt_Name=self.crypt_system.crypt_data(Name,self.MASTER_PASSWORD)
+
+		data=self.file_system.db_cursor.execute("SELECT * FROM Data WHERE Name = ?", (crypt_Name,)).fetchall()
+		if len(data)==0:
+			print(Fore.RED+"Wrong Name!"+Style.RESET_ALL)
+			return
+		print(Fore.GREEN+"Name:"+self.crypt_system.decrypt_data(data[0][0],self.MASTER_PASSWORD)+Style.RESET_ALL)
+		print(Fore.GREEN+"URL:"+self.crypt_system.decrypt_data(data[0][1],self.MASTER_PASSWORD)+Style.RESET_ALL)
+		print(Fore.GREEN+"Password:"+self.crypt_system.decrypt_data(data[0][2],self.MASTER_PASSWORD)+Style.RESET_ALL)
+
+
+
+
+
+
+
+
 	def get_MASTER_PASSWORD(self):
 
 
 		if len(self.MASTER_PASSWORD)==0:
 			self.MASTER_PASSWORD=str(input("$>MASTER_PASSWORD:"))*100
 			data_for_check=self.file_system.check_MASTER_PASSWORD()
-			print(data_for_check[0][2])
+
+			if self.crypt_system.decrypt_data(data_for_check[0][2],self.MASTER_PASSWORD) !="TEST_DATA":
+				print(Fore.RED+"Wrong MASTER_PASSWORD!"+Style.RESET_ALL)
+				sleep(3)
+				self.MASTER_PASSWORD=""
+				self.get_MASTER_PASSWORD()
 		else:
 			return
 		if len(self.MASTER_PASSWORD)==0:
