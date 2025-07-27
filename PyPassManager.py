@@ -16,31 +16,56 @@ class PyPassManager():
 		self.file_system=file_system()
 		self.MASTER_PASSWORD=""
 
+
+		self.file_system.db_cursor.execute('''SELECT * FROM Data WHERE Name="TEST_DATA" ''')
+		print(len(self.file_system.db_cursor.fetchall()))
+		if self.file_system.db_cursor.fetchall()==0:
+			print("NO MASTER_PASSWORD")
+			while True:
+				if len(self.MASTER_PASSWORD)==0:
+					self.MASTER_PASSWORD=str(input("$>set MASTER_PASSWORD:"))*100
+				else:
+					break
+				if len(self.MASTER_PASSWORD)==0:
+					print(Fore.RED+"Wrong input!"+Style.RESET_ALL)
+
+			crypt_TEST_DATA=self.crypt_system.crypt_data("TEST_DATA",self.MASTER_PASSWORD)
+			sql = "INSERT INTO Data (Name, URL_App, Password) VALUES (?, ?, ?)"
+			self.file_system.db_cursor.execute(sql, ("TEST_DATA","TEST_DATA",crypt_TEST_DATA))
+
+		self.file_system.db.commit()
+
+
+
+
+
 	def parse_command(self,command):
 		args=command.split()
 		match args[0]:
 			case "/add_new":
-				Name=str(input("$>Name (Press Enter to empty):"))
-				URL=str(input("$>URL or App:"))
-				Password=str(input("$>Password:"))
-				if len(self.MASTER_PASSWORD)==0:
-					self.MASTER_PASSWORD=str(input("MASTER_PASSWORD:"))*100
-
-				if Name:
-					crypt_Name=self.crypt_system.crypt_data(Name,self.MASTER_PASSWORD)
-				else:
-					Name="NULL"
-					crypt_Name=self.crypt_system.crypt_data(Name,self.MASTER_PASSWORD)
-
-				crypt_URL=self.crypt_system.crypt_data(URL,self.MASTER_PASSWORD)
-				crypt_Password=self.crypt_system.crypt_data(Password,self.MASTER_PASSWORD)
+				while True:
+					Name=str(input("$>Name (Press Enter to empty):"))
+					if Name:
+						break
+					else:
+						print(Fore.RED+"Empty input!"+Style.RESET_ALL)
 
 
-				output=self.file_system.write_data(crypt_Name,crypt_URL,crypt_Password)
-				if output:
-					print(Fore.RED+str(output)+Style.RESET_ALL)
-				else:
-					print(Fore.GREEN+"New password added!"+Style.RESET_ALL)
+				while True:
+					URL=str(input("$>URL or App:"))
+					if URL:
+						break
+					else:
+						print(Fore.RED+"Empty input!"+Style.RESET_ALL)
+				while True:
+					Password=str(input("$>Password:"))
+					if Password:
+						break
+					else:
+						print(Fore.RED+"Empty input!"+Style.RESET_ALL)
+
+				self.get_MASTER_PASSWORD()
+				self.add_new(Name,URL,Password)
 
 
 			case "/show_all":
@@ -62,23 +87,29 @@ class PyPassManager():
 
 
 
+	def add_new(self,Name,URL,Password):
+		crypt_Name=self.crypt_system.crypt_data(Name,self.MASTER_PASSWORD)
+		crypt_URL=self.crypt_system.crypt_data(URL,self.MASTER_PASSWORD)
+		crypt_Password=self.crypt_system.crypt_data(Password,self.MASTER_PASSWORD)
+		output=self.file_system.write_data(crypt_Name,crypt_URL,crypt_Password)
+		if output:
+			print(Fore.RED+str(output)+Style.RESET_ALL)
+		else:
+			print(Fore.GREEN+"New password added!"+Style.RESET_ALL)
 
 
+	def get_MASTER_PASSWORD(self):
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+		if len(self.MASTER_PASSWORD)==0:
+			self.MASTER_PASSWORD=str(input("$>MASTER_PASSWORD:"))*100
+			data_for_check=self.file_system.check_MASTER_PASSWORD()
+			print(data_for_check[0][2])
+		else:
+			return
+		if len(self.MASTER_PASSWORD)==0:
+			print(Fore.RED+"Wrong input!"+Style.RESET_ALL)
+			self.get_MASTER_PASSWORD()
 
 
 
