@@ -19,8 +19,7 @@ class PyPassManager():
 
 
 		self.file_system.db_cursor.execute('''SELECT * FROM Data WHERE Name="TEST_DATA" ''')
-		print(len(self.file_system.db_cursor.fetchall()))
-		if self.file_system.db_cursor.fetchall()==0:
+		if len(self.file_system.db_cursor.fetchall())==0:
 			print("NO MASTER_PASSWORD")
 			while True:
 				if len(self.MASTER_PASSWORD)==0:
@@ -45,7 +44,7 @@ class PyPassManager():
 		match args[0]:
 			case "/add_new":
 				while True:
-					Name=str(input("$>Name (Press Enter to empty):"))
+					Name=str(input("$>Name:"))
 					if Name:
 						break
 					else:
@@ -97,6 +96,15 @@ class PyPassManager():
 			    self.get_password(Name)
 
 
+			case "/delete_password":
+			    if len(args)!=2:
+			    	print(Fore.RED+"Use /delete_password <Name>"+Style.RESET_ALL)
+			    	return
+			    Name=args[1]
+			    self.get_MASTER_PASSWORD()
+			    self.delete_password(Name)
+
+
 
 
 	def add_new(self,Name,URL,Password):
@@ -124,6 +132,29 @@ class PyPassManager():
 		print(Fore.GREEN+"Password:"+self.crypt_system.decrypt_data(data[0][2],self.MASTER_PASSWORD)+Style.RESET_ALL)
 
 
+	def delete_password(self,Name):
+		
+
+		crypt_Name=self.crypt_system.crypt_data(Name,self.MASTER_PASSWORD)
+
+		data=self.file_system.db_cursor.execute("SELECT * FROM Data WHERE Name = ?", (crypt_Name,)).fetchall()
+		if len(data)==0:
+			print(Fore.RED+"Wrong Name!"+Style.RESET_ALL)
+			return
+
+		check=str(input(Fore.YELLOW+"Confirm deletion (type 'yes'):"+Style.RESET_ALL))
+		if check!="yes":
+			print("Stopping...")
+			return
+
+		
+		self.file_system.db_cursor.execute("DELETE FROM Data Where Name=?",(crypt_Name,))
+		self.file_system.db.commit()
+		print(Fore.GREEN+"Succeessfully deleted!"+Style.RESET_ALL)
+
+
+
+
 
 
 
@@ -144,6 +175,8 @@ class PyPassManager():
 				self.get_MASTER_PASSWORD()
 		else:
 			return
+
+
 		if len(self.MASTER_PASSWORD)==0:
 			print(Fore.RED+"Wrong input!"+Style.RESET_ALL)
 			self.get_MASTER_PASSWORD()
