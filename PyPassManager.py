@@ -104,6 +104,38 @@ class PyPassManager():
 			    self.get_MASTER_PASSWORD()
 			    self.delete_password(Name)
 
+			case "/etf":
+			    if len(args)!=2:
+			    	print(Fore.RED+"Use /extract_to_file <path/name>"+Style.RESET_ALL)
+			    	return
+			    path=args[1]
+
+			    data_crypt=self.file_system.show_all(self.MASTER_PASSWORD)
+			    if not data_crypt:
+			    	print(Fore.RED+"No saved password!"+Style.RESET_ALL)
+			    	return
+
+			    data=""
+			    self.get_MASTER_PASSWORD()
+			    for data_pack in data_crypt:
+			    	if data_pack[0] == "TEST_DATA":
+			    		continue
+			    	data+="Name:"+self.crypt_system.decrypt_data(data_pack[0],self.MASTER_PASSWORD)+"\n"
+			    	data+="URL:"+self.crypt_system.decrypt_data(data_pack[1],self.MASTER_PASSWORD)+"\n"
+			    	data+="Password:"+self.crypt_system.decrypt_data(data_pack[2],self.MASTER_PASSWORD)+"\n"
+			    	data+="\n"+"\n"
+			    
+			    try:
+			    	f=open(path,"a+",encoding="utf-8")
+			    	f.write(data)
+			    	f.close()
+			    except Exception as e:
+			    	print(Fore.RED+str(e)+Style.RESET_ALL)
+			    	return
+
+			    print(Fore.GREEN+f"Succeessfully extract to {path}"+Style.RESET_ALL)
+
+
 
 
 
@@ -151,11 +183,6 @@ class PyPassManager():
 		self.file_system.db_cursor.execute("DELETE FROM Data Where Name=?",(crypt_Name,))
 		self.file_system.db.commit()
 		print(Fore.GREEN+"Succeessfully deleted!"+Style.RESET_ALL)
-
-
-
-
-
 
 
 
