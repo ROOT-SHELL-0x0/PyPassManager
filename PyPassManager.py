@@ -104,7 +104,7 @@ class PyPassManager():
 			    self.get_MASTER_PASSWORD()
 			    self.delete_password(Name)
 
-			case "/etf":
+			case "/exract_to_file":
 			    if len(args)!=2:
 			    	print(Fore.RED+"Use /extract_to_file <path/name>"+Style.RESET_ALL)
 			    	return
