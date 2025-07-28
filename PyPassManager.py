@@ -3,6 +3,7 @@ from banner import *
 from lib.file_system import *
 from lib.crypt_system import *
 from time import sleep
+from argparse import ArgumentParser
 
 
 class PyPassManager():
@@ -15,6 +16,16 @@ class PyPassManager():
 
 		self.crypt_system=crypt_system()
 		self.file_system=file_system()
+
+
+		self.parser=ArgumentParser(description="PyPassManager")
+		self.parser.add_argument("--act",type=str,choices=["add","get","del","show_all","extract_to_file"],help="Add new password")
+		self.parser.add_argument("--Name",type=str,help="Name for actions")
+		self.parser.add_argument("--Url",type=str,help="Url for actions")
+		self.parser.add_argument("--Pass",type=str,help="Pass for actions")
+		self.parser.add_argument("--Path",type=str,help="Path to extract")
+
+
 		self.MASTER_PASSWORD=""
 
 
@@ -37,14 +48,43 @@ class PyPassManager():
 
 
 
+	def mainloop(self):
+		args=self.parser.parse_args()
+		if args.act==None:
+			while True:
+				command=str(input("$>"))
+				if len(command)==0:
+					None
+				else:
+					type_=None
+					self.parse_command(type_,command)
+		else:
+			type_="parser"
+			self.parse_command(type_,args)
 
 
-	def parse_command(self,command):
-		args=command.split()
-		match args[0]:
-			case "/add_new":
+
+
+
+	def parse_command(self,type_,command):
+		if type_=="parser":
+			act=command.act
+		else:
+			args=command.split()
+			act=args[0]
+
+
+		match act:
+			case "add":
 				while True:
-					Name=str(input("$>Name:"))
+					if type_ == "parser":
+						Name=command.Name
+						if Name is None:
+							Name=str(input("$>Name:"))
+							
+					else:
+						Name=str(input("$>Name:"))
+
 					if Name:
 						break
 					else:
@@ -52,27 +92,40 @@ class PyPassManager():
 
 
 				while True:
-					URL=str(input("$>URL or App:"))
+					if type_=="parser":
+						URL=command.Url
+						if URL is None:
+							URL=str(input("$>URL or App:"))
+
+					else:
+						URL=str(input("$>URL or App:"))
+
 					if URL:
 						break
 					else:
 						print(Fore.RED+"Empty input!"+Style.RESET_ALL)
+
 				while True:
-					Password=str(input("$>Password:"))
-					if Password:
-						break
+					if type_=="parser":
+						Password=command.Pass
+						if Password is None:
+							Password=str(input("$>Password:"))
 					else:
-						print(Fore.RED+"Empty input!"+Style.RESET_ALL)
+						Password=str(input("$>Password:"))
+						if Password:
+							break
+						else:
+							print(Fore.RED+"Empty input!"+Style.RESET_ALL)
 
 				self.get_MASTER_PASSWORD()
 				self.add_new(Name,URL,Password)
 
 
-			case "/show_all":
+			case "show_all":
 				self.get_MASTER_PASSWORD()
 
 				data=self.file_system.show_all(self.MASTER_PASSWORD)
-				if not data:
+				if len(data)==1:
 					print(Fore.RED+"No saved password!"+Style.RESET_ALL)
 					return
 
@@ -87,28 +140,48 @@ class PyPassManager():
 					print(Fore.GREEN+"Password:"+self.crypt_system.decrypt_data(data_pack[2],self.MASTER_PASSWORD)+Style.RESET_ALL)
 					print("\n"+"\n")
 
-			case "/get_password":
-			    if len(args)!=2:
-			    	print(Fore.RED+"Use /get_password <Name>"+Style.RESET_ALL)
-			    	return
-			    Name=args[1]
+			case "get":
+			    if type_=="parser":
+			    	Name=command.Name
+			    	if Name is None:
+			    		Name=str(input("$>Name:"))
+			    else:
+			    	if len(args)!=2:
+			    		print(Fore.RED+"Use 'get <Name>'"+Style.RESET_ALL)
+			    		return
+			    	else:
+			    		Name=args[1]
 			    self.get_MASTER_PASSWORD()
 			    self.get_password(Name)
 
 
-			case "/delete_password":
-			    if len(args)!=2:
-			    	print(Fore.RED+"Use /delete_password <Name>"+Style.RESET_ALL)
-			    	return
-			    Name=args[1]
+			case "del":
+			    if type_=="parser":
+			    	Name=command.Name
+			    	if Name is None:
+			    		Name=str(input("$>Name:"))
+			    else:
+			    	if len(args)!=2:
+			    		print(Fore.RED+"Use 'del <Name>"+Style.RESET_ALL)
+			    		return
+			    	Name=args[1]
 			    self.get_MASTER_PASSWORD()
 			    self.delete_password(Name)
 
-			case "/exract_to_file":
-			    if len(args)!=2:
-			    	print(Fore.RED+"Use /extract_to_file <path/name>"+Style.RESET_ALL)
-			    	return
-			    path=args[1]
+
+
+			case "extract":
+			    if type_=="parser":
+			    	path=command.Path
+			    	if path is None:
+			    		path=str(input("$>Path:"))
+			    else:
+			    	if len(args)!=2:
+			    		print(Fore.RED+"Use 'extract <path/name>'"+Style.RESET_ALL)
+			    		return
+			    	path=args[1]
+
+
 
 			    data_crypt=self.file_system.show_all(self.MASTER_PASSWORD)
 			    if not data_crypt:
@@ -159,9 +232,11 @@ class PyPassManager():
 		if len(data)==0:
 			print(Fore.RED+"Wrong Name!"+Style.RESET_ALL)
 			return
-		print(Fore.GREEN+"Name:"+self.crypt_system.decrypt_data(data[0][0],self.MASTER_PASSWORD)+Style.RESET_ALL)
-		print(Fore.GREEN+"URL:"+self.crypt_system.decrypt_data(data[0][1],self.MASTER_PASSWORD)+Style.RESET_ALL)
-		print(Fore.GREEN+"Password:"+self.crypt_system.decrypt_data(data[0][2],self.MASTER_PASSWORD)+Style.RESET_ALL)
+		for data_pack in data:
+			print(Fore.GREEN+"Name:"+self.crypt_system.decrypt_data(data_pack[0],self.MASTER_PASSWORD)+Style.RESET_ALL)
+			print(Fore.GREEN+"URL:"+self.crypt_system.decrypt_data(data_pack[1],self.MASTER_PASSWORD)+Style.RESET_ALL)
+			print(Fore.GREEN+"Password:"+self.crypt_system.decrypt_data(data_pack[2],self.MASTER_PASSWORD)+Style.RESET_ALL)
+			print('\n'+'\n')
 
 
 	def delete_password(self,Name):
@@ -207,31 +282,6 @@ class PyPassManager():
 		if len(self.MASTER_PASSWORD)==0:
 			print(Fore.RED+"Wrong input!"+Style.RESET_ALL)
 			self.get_MASTER_PASSWORD()
-
-
-
-
-
-
-
-
-
-
-
-
-	def mainloop(self):
-		while True:
-			command=str(input("$>"))
-			if len(command)==0:
-				None
-			else:
-				self.parse_command(command)
-
-
-
-
-
-
 
 
 
