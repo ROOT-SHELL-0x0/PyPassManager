@@ -22,7 +22,10 @@ class crypt_system:
 		key = urlsafe_b64encode(kdf.derive(password))
 
 		cipher=Fernet(key)
-		return cipher.encrypt(data.encode()).decode()
+		try:
+			return cipher.encrypt(data.encode()).decode()
+		except Exception as e:
+			return e
 		
 
 
@@ -41,7 +44,10 @@ class crypt_system:
 		key = urlsafe_b64encode(kdf.derive(password))
 
 		cipher=Fernet(key)
-		return cipher.decrypt(data.encode()).decode()
-		
+		try:
+			return cipher.decrypt(data.encode()).decode()
+		except Exception as e:
+			return e
+
 
 

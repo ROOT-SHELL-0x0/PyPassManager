@@ -41,6 +41,8 @@ class PyPassManager():
 					print(Fore.RED+"Wrong input!"+Style.RESET_ALL)
 
 			crypt_TEST_DATA=self.crypt_system.crypt_data("TEST_DATA",self.MASTER_PASSWORD)
+			print(crypt_TEST_DATA)
+			sleep(10)
 			sql = "INSERT INTO Data (Name, URL_App, Password) VALUES (?, ?, ?)"
 			self.file_system.db_cursor.execute(sql, ("TEST_DATA","TEST_DATA",crypt_TEST_DATA))
 
